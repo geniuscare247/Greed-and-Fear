@@ -1,7 +1,10 @@
 # Forecasting Next-Week Realized Volatility for S&P 500 ETFs
 
 **Team:** Greed and Fear  
-**Members:** Ronald Ho, Siddharthen Sridhar, Diogo Viveiros, Vinit S. Bhatt
+**Members:** Vinit S. Bhatt, 
+             Siddharthen Sridhar, 
+             Ronald Ho, 
+             Diogo Viveiros
 
 ## 📌 Project Overview
 Volatility is a core object in investing, affecting position sizing, risk budgeting, and derivative pricing. Unlike short-horizon returns, volatility exhibits persistence and clustering, making it a realistic target for predictive modeling.
