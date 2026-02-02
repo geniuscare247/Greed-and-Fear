@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import os
 import argparse
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
 # Define paths
@@ -49,19 +50,23 @@ def prepare_features(df):
     
     # 3. Feature: Trailing 20-day realized volatility (Persistence Baseline Feature)
     # Formula: sqrt(sum(r_t-j^2)) * sqrt(252/20)
+    # Use min_periods=1 to get values earlier, or just drop the first 20 rows later
     df_ticker['trailing_vol_20d'] = df_ticker['daily_log_return'].pow(2).rolling(window=20).sum().pow(0.5) * np.sqrt(252)
     
     # 4. Feature: Trailing 5-day realized volatility
     df_ticker['trailing_vol_5d'] = df_ticker['daily_log_return'].pow(2).rolling(window=5).sum().pow(0.5) * np.sqrt(252)
 
-    # Drop NaN values created by rolling windows
-    df_clean = df_ticker.dropna().copy()
-    
     # Define Input Features (X) and Target (y)
-    # Baseline uses 'trailing_vol_20d' as the primary predictor
     feature_cols = ['trailing_vol_20d', 'trailing_vol_5d']
     target_col = 'target_vol_5d'
+
+    # Drop NaN values created by rolling windows (feature/target generation)
+    # We only care about NaNs in the columns we actually use.
+    df_clean = df_ticker.dropna(subset=feature_cols + [target_col]).copy()
     
+    print(f"Data range after filtering: {df_clean['date'].min()} to {df_clean['date'].max()}")
+    print(f"Total rows: {len(df_clean)}")
+
     return df_clean, feature_cols, target_col
 
 def create_dataset(X, y, batch_size=32):
@@ -82,6 +87,56 @@ def build_linear_model(input_dim):
                   loss='mse',
                   metrics=['mae', 'mse'])
     return model
+
+def plot_history(history, output_path):
+    """Plots training and validation loss/MAE."""
+    hist = pd.DataFrame(history.history)
+    hist['epoch'] = history.epoch
+
+    plt.figure(figsize=(12, 5))
+    
+    # Plot Loss (MSE)
+    plt.subplot(1, 2, 1)
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss (MSE)')
+    plt.plot(hist['epoch'], hist['loss'], label='Train Error')
+    plt.plot(hist['epoch'], hist['val_loss'], label='Val Error')
+    plt.legend()
+    plt.title('Training and Validation Loss')
+
+    # Plot MAE
+    plt.subplot(1, 2, 2)
+    plt.xlabel('Epoch')
+    plt.ylabel('Mean Abs Error (MAE)')
+    plt.plot(hist['epoch'], hist['mae'], label='Train MAE')
+    plt.plot(hist['epoch'], hist['val_mae'], label='Val MAE')
+    plt.legend()
+    plt.title('Training and Validation MAE')
+    
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+    print(f"Training history plot saved to {output_path}")
+
+def plot_predictions(y_true, y_pred, output_path, title='Prediction vs Actual'):
+    """Plots scatter plot of predicted vs actual values."""
+    plt.figure(figsize=(8, 8))
+    plt.scatter(y_true, y_pred, alpha=0.5)
+    
+    # Perfect prediction line
+    lims = [
+        np.min([plt.xlim(), plt.ylim()]),  # min of both axes
+        np.max([plt.xlim(), plt.ylim()]),  # max of both axes
+    ]
+    plt.plot(lims, lims, 'r-', alpha=0.75, zorder=0)
+    plt.xlabel('Actual Volatility (Annualized)')
+    plt.ylabel('Predicted Volatility (Annualized)')
+    plt.title(title)
+    
+    plt.tight_layout()
+    plt.savefig(output_path)
+    plt.close()
+    print(f"Prediction scatter plot saved to {output_path}")
 
 def main():
     # 1. Load Data
@@ -130,6 +185,9 @@ def main():
     
     history = model.fit(train_ds, epochs=50, validation_data=val_ds, verbose=1)
     
+    # Save training history plot
+    plot_history(history, os.path.join(OUTPUT_DIR, 'training_history.png'))
+    
     # 7. Evaluation
     print("\n--- Evaluation on Test Set ---")
     # A. Heuristic Baseline: Persistence (Predict next 5d vol = current 20d vol)
@@ -150,6 +208,11 @@ def main():
     print(f"  MAE:  {mae_model1:.4f}")
     print(f"  RMSE: {rmse_model1:.4f}")
     
+    # Generate predictions for scatter plot
+    y_pred_model1 = model.predict(X_test_scaled).flatten()
+    plot_predictions(y_test, y_pred_model1, os.path.join(OUTPUT_DIR, 'prediction_scatter.png'), 
+                     title='Model 1: Predicted vs Actual Volatility (Test Set)')
+
     # Save Model
     model_save_path = os.path.join(OUTPUT_DIR, 'baseline_model_tf.keras')
     model.save(model_save_path)
