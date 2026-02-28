@@ -70,6 +70,7 @@ We evaluate performance using **MAE** and **RMSE** on a time-based split:
 *   **Train:** 2015 – 2021
 *   **Validation:** 2022 – 2023
 *   **Test:** 2024 – 2025
+![Model Evaluation](Code/model_performance_comparison.png)
 
 **Planned Models:**
 1.  **Baseline:** Volatility Persistence (predict next week = last 20 days).
