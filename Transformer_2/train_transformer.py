@@ -6,10 +6,26 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import random
+
+# Fix the random seed so we get the exact same results every time we run this.
+# This eliminates variations from random weight initializations and data shuffling!
+def set_seed(seed=42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    
+    # We also need these cudnn backend settings to ensure PyTorch relies on deterministic algorithms
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+set_seed(42)
 
 # ---------------------------------------------------------
-# 1. Positional Encoding & Transformer Model (from snippet)
+# 1. Positional Encoding & Transformer Model (from the paper)
 # ---------------------------------------------------------
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len=5000):
@@ -83,6 +99,7 @@ class TimeSeriesDataset(Dataset):
 
 def create_sequences(X_df, y_series, time_steps=5):
     """
+    Ronald Note
     Given a dataframe X_df and target series y_series, 
     creates sliding window sequences of length `time_steps`.
     Because y_series at index `i` is forward-looking (calculates forward_vol_5d starting from t),
@@ -132,6 +149,11 @@ if __name__ == "__main__":
         'VIX'
     ]
 
+    V1_FEATURES = [
+        'y_known_at_t',
+        'trailing_vol_annual_decimel_20d_calculated'
+    ]
+
     print("Loading datasets...")
     train_df = load_and_preprocess_split(TRAIN_FILE, FEATURES, TARGET)
     val_df   = load_and_preprocess_split(VAL_FILE, FEATURES, TARGET)
@@ -149,8 +171,9 @@ if __name__ == "__main__":
     test_df[FEATURES] = scaler.transform(test_df[FEATURES])
     
     # Make sequences
-    print("Creating sequences (Time Steps = 5)...")
-    TIME_STEPS = 5
+    TIME_STEPS = 5 #5, 10, 15
+
+    print(f"Creating sequences (Time Steps = {TIME_STEPS})...")
     
     # Note: creating sequences for all tickers indiscriminately may mix tickers at boundaries.
     # We group by ticker to prevent boundary leakage.
@@ -172,7 +195,7 @@ if __name__ == "__main__":
     print(f"Train Seq: {X_train_seq.shape} | Val Seq: {X_val_seq.shape} | Test Seq: {X_test_seq.shape}")
 
     # DataLoaders
-    batch_size = 64
+    batch_size = 128
     train_dataset = TimeSeriesDataset(X_train_seq, y_train_seq)
     val_dataset = TimeSeriesDataset(X_val_seq, y_val_seq)
     test_dataset = TimeSeriesDataset(X_test_seq, y_test_seq)
@@ -197,7 +220,7 @@ if __name__ == "__main__":
 
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-    epochs = 10
+    epochs = 11
 
     print("Beginning Training...")
     for epoch in range(epochs):
@@ -254,6 +277,7 @@ if __name__ == "__main__":
     
     mae = mean_absolute_error(all_targets, all_preds)
     rmse = math.sqrt(mean_squared_error(all_targets, all_preds))
-    print(f"Test MAE: {mae:.6f} | Test RMSE: {rmse:.6f}")
+    r2 = r2_score(all_targets, all_preds)
+    print(f"Test MAE: {mae:.6f} | Test RMSE: {rmse:.6f} | Test R^2: {r2:.6f}")
     
     print("Code Execution Completed.")
