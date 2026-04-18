@@ -24,9 +24,6 @@ def set_seed(seed=42):
 
 set_seed(42)
 
-# ---------------------------------------------------------
-# 1. Positional Encoding & Transformer Model (from the paper)
-# ---------------------------------------------------------
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, max_len=5000):
         super(PositionalEncoding, self).__init__()
@@ -83,9 +80,6 @@ class TransformerModel(nn.Module):
         output = self.activation(output) * 100
         return output
 
-# ---------------------------------------------------------
-# 2. Data Loading & Sequence Preparation
-# ---------------------------------------------------------
 class TimeSeriesDataset(Dataset):
     def __init__(self, X_seq, y_seq):
         self.X = torch.tensor(X_seq, dtype=torch.float32)
@@ -99,7 +93,7 @@ class TimeSeriesDataset(Dataset):
 
 def create_sequences(X_df, y_series, time_steps=5):
     """
-    Ronald Note
+    Ronald Note:
     Given a dataframe X_df and target series y_series, 
     creates sliding window sequences of length `time_steps`.
     Because y_series at index `i` is forward-looking (calculates forward_vol_5d starting from t),
@@ -124,9 +118,6 @@ def load_and_preprocess_split(file_path, features, target):
         
     return df
 
-# ---------------------------------------------------------
-# 3. Main Routine
-# ---------------------------------------------------------
 if __name__ == "__main__":
     # Base configuration based on V2 target and features
     BASE_DIR = r"C:\Users\X\GearAndFear\Greed-and-Fear\data_splits"
