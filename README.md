@@ -27,11 +27,11 @@ Greed-and-Fear/
 ├── data/                   # raw dataset and description PDF
 ├── data_splits/            # pre-split train/val/test CSVs
 ├── data_with_baselines/    # dataset enriched with 6 heuristic baselines
-├── EDA/                    # exploratory analysis notebooks and figures
+├── Additional EDA/         # supplemental EDA done for us to better understand the data, that did not fit the space and flow constraints to add to the paper and presentation
 ├── Elastic_Net_Regression/ # Additional code for Elastic Net
-├── Transformer_2/          # Additional code using PyTorch used for Ronald's Transformer
+├── Transformer_2/          # Additional code using PyTorch used for Ronald's Transformer model.
 ├── research_proposal/      # project proposal PDF
-├── slides/                 # presentation decks
+├── slides/                 # presentation decks. The PDF we presented in class is titled "Forecasting Volatility In Stock Market V2.pptx"
 └── README.md
 ```
 
