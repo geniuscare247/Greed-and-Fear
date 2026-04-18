@@ -10,7 +10,6 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import random
 
 # Fix the random seed so we get the exact same results every time we run this.
-# This eliminates variations from random weight initializations and data shuffling!
 def set_seed(seed=42):
     random.seed(seed)
     np.random.seed(seed)
@@ -29,7 +28,6 @@ class PositionalEncoding(nn.Module):
         super(PositionalEncoding, self).__init__()
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        # Fix: using math.log instead of np.log to avoid numpy dependency in tensor building
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
@@ -92,14 +90,6 @@ class TimeSeriesDataset(Dataset):
         return self.X[idx], self.y[idx]
 
 def create_sequences(X_df, y_series, time_steps=5):
-    """
-    Ronald Note:
-    Given a dataframe X_df and target series y_series, 
-    creates sliding window sequences of length `time_steps`.
-    Because y_series at index `i` is forward-looking (calculates forward_vol_5d starting from t),
-    a sequence using data [i - time_steps + 1 : i] maps perfectly to target at 'i', 
-    ensuring strictly trailing and thus causal mapping from past data to target.
-    """
     Xs, ys = [], []
     for i in range(time_steps - 1, len(X_df)):
         v = X_df.iloc[(i - time_steps + 1) : (i + 1)].values
@@ -162,11 +152,10 @@ if __name__ == "__main__":
     test_df[FEATURES] = scaler.transform(test_df[FEATURES])
     
     # Make sequences
-    TIME_STEPS = 5 #5, 10, 15
+    TIME_STEPS = 5 #tried 10, 15, but RMSE higher
 
     print(f"Creating sequences (Time Steps = {TIME_STEPS})...")
     
-    # Note: creating sequences for all tickers indiscriminately may mix tickers at boundaries.
     # We group by ticker to prevent boundary leakage.
     def build_dataset_by_ticker(df):
         X_all, y_all = [], []
