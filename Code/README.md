@@ -1,34 +1,30 @@
-# Baseline Model Implementation
+# Code Directory
 
-This directory contains the implementation of the Baseline Model and Model 1 (Linear Regression) as described in the Research Proposal.
+Two main scripts here — one for the single linear baseline, one that runs all five models back to back for comparison.
 
 ## Files
-- `baseline_model.py`: The main Python script implementing the models in TensorFlow.
 
-## Requirements
-To run this code, you need the following Python packages:
-- `tensorflow`
-- `pandas`
-- `numpy`
-- `scikit-learn`
+- `baseline_model.py` — trains the TF linear regression (Model 1) on SPY only, saves the `.keras` file and scatter plot
+- `baseline_model_vs_model_comparison.py` — runs Baseline FCN, Random Forest, XGBoost, LSTM, and Transformer, prints a results table, and saves comparison plots
 
-## Usage
-Run the script using Python:
+## Running
+
+Make sure you've updated `DATA_PATH` in `baseline_model.py` to point to your local copy of the volatility dataset before running. The path in the script is hardcoded to the original dev environment.
 
 ```bash
 python3 baseline_model.py
 ```
 
-## Description
-The script performs the following steps:
-1.  **Loads Data**: Reads the volatility dataset from `../data/volatility_dataset_013026.csv`.
-2.  **Preprocesses**: Filters for 'SPY' (as a demonstration), calculates daily log returns, and computes target volatility (next 5 days) and features (trailing 20d/5d volatility).
-3.  **Splits Data**: Uses time-based splitting:
-    - Train: 2015-2021
-    - Validation: 2022-2023
-    - Test: 2024-2025
-4.  **Trains Model**: Trains a Linear Regression model using TensorFlow (`Model 1`).
-5.  **Evaluates**:
-    - Calculates MAE/RMSE for the **Persistence Heuristic** (Baseline).
-    - Calculates MAE/RMSE for the **Linear Regression Model** (Model 1).
-6.  **Saves**: Saves the trained TensorFlow model to `baseline_model_tf.keras`.
+For the full comparison:
+
+```bash
+python3 baseline_model_vs_model_comparison.py
+```
+
+Training takes a few minutes on CPU. LSTM and Transformer are the slowest. Results get written to `model_comparison_results.csv`.
+
+## Notes
+
+The baseline script only runs on SPY — that was a deliberate simplification to get a quick sanity check working before scaling to all tickers. The comparison script also operates on SPY only for the same reason; the full multi-ticker pipeline lives in the Transformer_2 and Elastic_Net_Regression directories.
+
+Time splits used throughout: train 2015–2021, validation 2022–2023, test 2024–2025. Scaler is always fit on train only.

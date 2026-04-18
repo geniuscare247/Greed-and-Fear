@@ -1,157 +1,99 @@
 # Forecasting Next-Week Realized Volatility for S&P 500 ETFs
 
 **Team:** Greed and Fear  
-**Members:** Vinit S. Bhatt, 
-             Siddharthen Sridhar, 
-             Ronald Ho, 
-             Diogo Viveiros
+**Members:** Vinit S. Bhatt, Siddharthen Sridhar, Ronald Ho, Diogo Viveiros
 
-## 📌 Project Overview
-Volatility is a core object in investing, affecting position sizing, risk budgeting, and derivative pricing. Unlike short-horizon returns, volatility exhibits persistence and clustering, making it a realistic target for predictive modeling.
+---
 
-This project builds an end-to-end machine learning pipeline to predict **next-week realized volatility** for a panel of S&P 500 index-linked ETFs (market, sector, and industry). We use historical price data and macro/risk indicators from FactSet (2014-2025) to compare strong heuristic baselines against a suite of machine learning and deep learning models.
+## Project Overview
 
-## 🎯 Prediction Task
-**Goal:** Predict the annualized realized volatility for the next 5 trading days.
+This project came out of a shared interest in whether realized volatility is actually predictable beyond naive persistence — i.e., does "tomorrow looks like today" hold up against something more sophisticated? We focused on next-week (5-day) realized volatility for a panel of S&P 500-linked ETFs (market, sector, and industry level) using FactSet price data from 2014 to 2025.
+
+One thing we noticed early in EDA is that volatility regimes are sticky — there are long stretches of calm punctuated by sharp spikes (COVID in 2020, rate-hike period in 2022) where the persistence baseline breaks down the most. That motivated us to include macro indicators like VIX, the 10Y/3M yield spread, and oil as features in the more advanced models.
+
+The prediction target is annualized 5-day realized volatility:
 
 $$ y_{i,t} = \sqrt{\sum_{j=1}^{5} r_{i,t+j}^2} \times \sqrt{252} $$
 
-**Input Features:** computed using only data available up to time $t$ (no look-ahead bias).
+All input features are computed strictly from data available at time $t$ — no look-ahead.
 
-## 📂 Repository Structure
+---
+
+## Repository Layout
 
 ```
 Greed-and-Fear/
-├── Code/               # Modeling and source code
-│   ├── baseline_model.py   # TensorFlow implementation of Baseline & Linear Model
-│   ├── baseline_model_vs_model_comparison.py # Comprehensive model comparison script
-│   └── README.md           # Instructions for running models
-├── data/               # Dataset files
-│   ├── volatility_dataset_013026.csv
-│   └── volatility_dataset_description_UPDATED_013026.pdf
-├── EDA/                # Exploratory Data Analysis
-│   ├── eda_script.py       # Script to generate plots
-│   └── [figures]           # Generated PNG visualizations
-├── research_proposal/  # Documentation
-│   └── Final_Project_Proposal_Submission_2026-02-01.pdf
-└── README.md           # This file
+├── Code/                   # baseline and comparison scripts
+├── data/                   # raw dataset and description PDF
+├── data_splits/            # pre-split train/val/test CSVs
+├── data_with_baselines/    # dataset enriched with 6 heuristic baselines
+├── EDA/                    # exploratory analysis notebooks and figures
+├── Elastic_Net_Regression/ # elastic net model work
+├── LSTM/                   # LSTM experiments
+├── Transformer_1/          # first transformer attempt (Keras)
+├── Transformer_2/          # refined transformer (PyTorch reference + TF port)
+├── research_proposal/      # project proposal PDF
+├── slides/                 # presentation decks
+└── README.md
 ```
 
-## 🚀 Getting Started
+---
 
-### Prerequisites
-*   Python 3.8+
-*   `pandas`, `numpy`, `matplotlib`, `seaborn`, `scikit-learn`, `tensorflow`, `xgboost`
+## Setup
 
-### Installation
-Clone the repo and install dependencies:
+Python 3.9+ recommended. Install dependencies:
 
 ```bash
-pip install pandas numpy matplotlib seaborn scikit-learn tensorflow xgboost
+pip install pandas numpy matplotlib seaborn scikit-learn tensorflow torch xgboost
 ```
 
-### Running the EDA
-Generate visualizations for price history, volatility comparisons, and correlations:
+Update the `BASE_DIR` paths in scripts to point to your local `data_splits/` folder before running.
+
+### EDA
 
 ```bash
 python3 EDA/eda_script.py
 ```
-Output figures will be saved in the `EDA/` directory.
 
-### Running the Model Comparison
-Train and evaluate all models (Baseline FCN, Random Forest, XGBoost, LSTM, and Transformer):
+Saves figures to `EDA/`.
+
+### Model Comparison (all 5 models)
 
 ```bash
 python3 Code/baseline_model_vs_model_comparison.py
 ```
-This script will train all models, print the evaluation results to the console, and save comparison plots and a CSV of the results in the `Code/` directory.
 
-## 📊 Models & Evaluation
+Prints results to console and writes `model_comparison_results.csv` and plots to `Code/`.
 
-We evaluate performance using **MAE** and **RMSE** on a time-based split:
-*   **Train:** 2015 – 2021
-*   **Validation:** 2022 – 2023
-*   **Test:** 2024 – 2025
+---
 
-### Implemented Models
+## Models
 
-1.  **Baseline: Fully Connected Network (FCN)**: A simple linear regression model implemented in TensorFlow.
-    ```
-    Model: "sequential"
-    _________________________________________________________________
-     Layer (type)                Output Shape              Param #   
-    =================================================================
-     dense (Dense)               (None, 1)                 3         
-    =================================================================
-    Total params: 3
-    Trainable params: 3
-    Non-trainable params: 0
-    _________________________________________________________________
-    ```
+We started with a dead-simple persistence baseline (predict next week's vol = last 20-day vol) as a sanity check, then added a linear regression in TensorFlow to see if even a 2-feature model beats it. Spoiler: it does, but only modestly. The bigger story is that none of the fancier models beat the linear baseline by much on MAE — which is actually an interesting finding about how efficient the volatility signal is.
 
-2.  **Random Forest**: An ensemble of decision trees to capture non-linear relationships.
+| Model | MAE | RMSE |
+|---|---|---|
+| Baseline FCN (linear) | 0.101 | 0.173 |
+| Random Forest | 0.123 | 0.263 |
+| XGBoost | 0.131 | 0.265 |
+| LSTM | 0.131 | 0.290 |
+| Transformer | 0.120 | 0.220 |
 
-3.  **XGBoost**: A gradient boosting framework that has proven to be highly effective in many machine learning competitions.
-
-4.  **LSTM (Long Short-Term Memory)**: A type of recurrent neural network (RNN) well-suited for time-series data.
-    ```
-    Model: "sequential_1"
-    _________________________________________________________________
-     Layer (type)                Output Shape              Param #   
-    =================================================================
-     lstm (LSTM)                 (None, 5, 50)             10600     
-     lstm_1 (LSTM)               (None, 50)                20200     
-     dense_1 (Dense)             (None, 1)                 51        
-    =================================================================
-    Total params: 30,851
-    Trainable params: 30,851
-    Non-trainable params: 0
-    _________________________________________________________________
-    ```
-
-5.  **Transformer**: A deep learning model that uses self-attention, originally designed for natural language processing, but also effective for time-series forecasting.
-    ```
-    Model: "functional_2"
-    __________________________________________________________________________________________________
-     Layer (type)                   Output Shape         Param #     Connected to                     
-    ==================================================================================================
-     input_layer_2 (InputLayer)     [(None, 5, 2)]       0           []                               
-     multi_head_attention (MultiHea  (None, 5, 2)        11266       [...]
-     ...
-     global_average_pooling1d (Glob  (None, 5)           0           [...]
-     dense_2 (Dense)                (None, 64)           384         [...]
-     dense_3 (Dense)                (None, 1)            65          [...]
-    ==================================================================================================
-    Total params: 24,281
-    Trainable params: 24,281
-    Non-trainable params: 0
-    __________________________________________________________________________________________________
-    ```
-
-### Performance
-
-The following table summarizes the performance of each model on the test set:
-
-| Model             | MAE      | RMSE     |
-|-------------------|----------|----------|
-| Baseline FCN      | 0.101279 | 0.172551 |
-| Random Forest     | 0.123252 | 0.262638 |
-| XGBoost           | 0.130733 | 0.265453 |
-| LSTM              | 0.130582 | 0.290462 |
-| Transformer       | 0.119788 | 0.220441 |
+The Transformer does close the gap on RMSE vs. the tree models, which makes sense — it handles the tail spike events somewhat better than RF/XGB. The LSTM underperforms, possibly because 5-day sequences are too short to take advantage of recurrence.
 
 ![Model Evaluation](Code/model_performance_comparison.png)
 
-## 📅 Roadmap
-*   [x] **Proposal Submission**
-*   [x] **Data Collection & Cleaning**
-*   [x] **EDA & Feature Engineering**
-*   [x] **Baseline Model Implementation**
-*   [x] **Advanced Model Development & Comparison**
-*   [ ] **Subgroup Evaluation (Sector/Industry)**
-*   [ ] **Final Report & Presentation**
+---
 
-## 📚 References
-*   Campisi, G., et al. (2024). *A comparison of machine learning methods...*
-*   Díaz, J. D., et al. (2024). *Machine-learning stock market volatility...*
-*   Filipović, D., & Khalilzadeh, A. (2021). *Machine learning for predicting stock return volatility.*
+## What's Left
+
+- Sector/industry subgroup breakdown (does the model work better on low-vol sectors like utilities?)
+- Final report writeup and presentation
+
+---
+
+## References
+
+- Campisi, G., et al. (2024). *A comparison of machine learning methods for volatility forecasting.*
+- Díaz, J. D., et al. (2024). *Machine-learning stock market volatility: Predictability and profit.*
+- Filipović, D., & Khalilzadeh, A. (2021). *Machine learning for predicting stock return volatility.*
