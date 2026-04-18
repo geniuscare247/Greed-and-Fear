@@ -23,15 +23,13 @@ All input features are computed strictly from data available at time $t$ — no 
 
 ```
 Greed-and-Fear/
-├── Code/                   # baseline and comparison scripts
+├── Code/                   # Main code for the baselines, and the 3 TF models we ran (Elastic Net, LSTM, and Transformer)
 ├── data/                   # raw dataset and description PDF
 ├── data_splits/            # pre-split train/val/test CSVs
 ├── data_with_baselines/    # dataset enriched with 6 heuristic baselines
 ├── EDA/                    # exploratory analysis notebooks and figures
-├── Elastic_Net_Regression/ # elastic net model work
-├── LSTM/                   # LSTM experiments
-├── Transformer_1/          # first transformer attempt (Keras)
-├── Transformer_2/          # refined transformer (PyTorch reference + TF port)
+├── Elastic_Net_Regression/ # Additional code for Elastic Net
+├── Transformer_2/          # Additional code using PyTorch used for Ronald's Transformer
 ├── research_proposal/      # project proposal PDF
 ├── slides/                 # presentation decks
 └── README.md
