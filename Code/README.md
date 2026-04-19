@@ -1,11 +1,25 @@
 # Code Directory
 
-Two main scripts here — one for the single linear baseline, one that runs all five models back to back for comparison.
+The following is a description of the Jupyter Notebooks used for our volatility prediction project: 
 
 ## Files
 
-- `baseline_model.py` — trains the TF linear regression (Model 1) on SPY only, saves the `.keras` file and scatter plot
-- `baseline_model_vs_model_comparison.py` — runs Baseline FCN, Random Forest, XGBoost, LSTM, and Transformer, prints a results table, and saves comparison plots
+## 1. Exploratory Data Analysis (EDA)
+* **`EDA (Diogo).ipynb`** - **[Primary]** This is the main EDA notebook. The findings and visualizations generated here are the ones referenced in the main body of our paper.
+* **`EDA_ETF_Volatility_TimeSeries_vb_done_021126_VB_git_021026.ipynb`** - Supplementary EDA code. The outputs from this notebook are included in the appendix of the Final Report.
+
+## 2. Data Preparation & Splits
+* **`data_split_for_volatility_dataset_vb_done_git_040426_040426.ipynb`** - Contains the logic and code execution for setting up our training, validation, and test sets.
+
+## 3. Baseline Models
+* **`xgboost_walk_forward_vol_baseline_vb_git_030326_1551.ipynb`** - Walk-forward baseline model utilizing XGBoost.
+* **`baseline_model_TF_vb_done_041626_1658.ipynb`** - Contains our other standard baseline models, including naive averages and Ordinary Least Squares (OLS) regressions.
+
+## 4. Advanced Models
+* **`elastic_net_vol_v1v2_TF_vb_done_041826.ipynb` (Vinit)** - Implementation and hyperparameter tuning for our Elastic Net model.
+* **`LSTM_basic (3).ipynb` (Sid)** - Implementation of the Long Short-Term Memory (LSTM) neural network.
+* **`Transformer_1.ipynb` (Diogo)** - This is our more performant Transformer model, that we included the results of the paper.
+* **`train_transformer.ipynb` (Ronald)** - An alternative Transformer model. While its performance did not exceed the model above, it represents independent modeling and architectural work.
 
 ## Running
 
